@@ -1,18 +1,14 @@
 /*-----------------------------  jiang-algorithm.js  -------------------------------
-
 This file consists of functions used to trilaterate an individual's position
 based on RSSI readings from various beacons. This implementation utilizes weights
 in order to prioritize the closest, most accurate readings.
-
 An optimal value for K, number of beacons to be utilized has yet to be discovered.
 (Perhaps all beacons with an RSSI better than around |70|? |80|? Depends on how many
 usable beacons this gives us in various locations...)
-
 An optimal algorithm for determining weights {w1, w2, ... , wk} for every k beacon
 yet to be discovered. It will scale based on RSSI linearly, linearithmically,
 etc. My idea is to instead add 100 to each RSSI value, add up the RSSI values and
 assign a weight proportional to each based on its composition of the sum (linear)
-
 ----------------------------------------------------------------------*/
 
 /*
@@ -25,12 +21,12 @@ import * as ipsModule from 'ips.js';
 function findKBest(beacons, k=7)
 {
 //all obtained rssi values for a given 1000ms period as input_rssi
-var a [beacons.size()];
-var sortedArr [7];
+var a [beacons.length];
+var sortedArr [k];
 var dist;
 //get all rssi values
 index=0;
-for (i in beacon)
+for (i in beacons)
 {
 a[index]=beacons[i][2]
 index++;
@@ -42,14 +38,14 @@ a.sort(function(a, b) {
 // compares the top 7 in sorted rssi list, a, and the rssi values in the original beacon array.
 // If a value matches, put the x, y, and rssi into a new array called sortedArr.
 index=0;
-for (var i=0; var<7; var++){
+for (var i=0; var<k; var++){
   for i in beacons
   {
   if a[1]==beacons[i][2]
     {
     sortedArr=beacons[i];
     index++;
-    if index==7
+    if index==k
     break;
     }
   }
@@ -116,3 +112,4 @@ function getWeightedPosition(beacons){
   return userLocation;
 
 }
+
