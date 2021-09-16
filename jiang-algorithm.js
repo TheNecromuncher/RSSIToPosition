@@ -14,53 +14,60 @@ etc. My idea is to instead add 100 to each RSSI value, add up the RSSI values an
 assign a weight proportional to each based on its composition of the sum (linear)
 
 ----------------------------------------------------------------------*/
+/*jshint esversion: 6 */
 
 /*
 Import previous ips implementation to borrow functions related to trilateration,
 rssi value handling, etc.
 */
-import * as ipsModule from 'ips.js';
+
+// Calculates distance (in feet afaik) with -65 being RSSI@1meter
+// and n=2 being a constant (both provided by beacons)
+function rssi_to_dist(rssi, A=-65, n=2 ) {
+  var exp = (A - rssi)/(10*n),
+    dist = 3.28*Math.pow(10, exp);
+  return dist;
+}
+
+// new stuff
 
 // beacon[i][3] is the RSSI, sort array by this value
 function findKBest(beacons, k=7)
 {
-//all obtained rssi values for a given 1000ms period as input_rssi
-var a [beacons.size()];
-var sortedArr [7];
-var dist;
-//get all rssi values
-index=0;
-for (i in beacon)
-{
-a[index]=beacons[i][2]
-index++;
+  var KBestArray = new Array(k).fill(1000);
+  beacons.forEach(function(beacon){
+      KBestArray = insert(KBestArray, beacon);
+  });
+  return KBestArray;
+
 }
-//sorts the array of all the rssi values
-a.sort(function(a, b) {
-  return b - a;
-})
-// compares the top 7 in sorted rssi list, a, and the rssi values in the original beacon array.
-// If a value matches, put the x, y, and rssi into a new array called sortedArr.
-index=0;
-for (var i=0; var<7; var++){
-  for i in beacons
-  {
-  if a[1]==beacons[i][2]
-    {
-    sortedArr=beacons[i];
-    index++;
-    if index==7
-    break;
+
+function insert(array, value){
+  array.splice(sortedArrayIndex(array, value)+1,0, value);
+  return array;
+}
+
+// for quicksort -- binary search js implementation sort of thing
+function sortedArrayIndex(array, value){
+  var low = 0,
+  high = array.length;
+    while (low < high) {
+        // bitwise unsigned rightshift 1 -- to divide by 2 but much faster
+        var mid = (low + high) >>> 1;
+        // array[mid][3] just grabs the 4th element of the beacon -- the rssi
+        if (array[mid][3] < value[3]){
+          low = mid + 1;
+        }
+        else{
+          high = mid;
+        }
     }
-  }
-  }
-  return sortedArr;
+    return low;
 }
 
 function getWeights(BeaconArray){
-  var cumulativeRSSI;
-  var temp;
-  var InverseRSSI = new Array(beacons.length);
+  var cumulativeRSSI, temp,
+  		InverseRSSI = new Array(beacons.length);
   // fill InverseRSSI array with (100 - RSSI) from each beacon
   // accumulate the new sum of RSSIs to get (linearly) weighted average
   BeaconArray.forEach(function(beacon){
@@ -71,7 +78,7 @@ function getWeights(BeaconArray){
   // each beacon gets an additional field, its weight, which is:
   // ( (100-RSSI) / new sum of RSSIs )
   BeaconArray.forEach(function(beacon){
-    beacon[4] = (InverseRSSI[BeaconArray.indexOf(beacon)]/cumulativeRSSI)
+    beacon[4] = (InverseRSSI[BeaconArray.indexOf(beacon)]/cumulativeRSSI);
   });
   return BeaconArray;
 }
@@ -81,7 +88,7 @@ function getAveragedLocation(BeaconArray){
   BeaconArray.forEach(function(beacon){
     x += beacon[0] * beacon[5];
     y += beacon[1] * beacon[5];
-  })
+  });
   var userLocation = [x, y];
   return userLocation;
 }
@@ -90,7 +97,7 @@ function getWeightedPosition(beacons){
   // import data
   var x, y, r, d, i;
   if(beacons.length < 3) {
-    return ["ERROR", "Not enough beacons!"]
+    return ["ERROR", "Not enough beacons!"];
   }
   var BeaconArray = new Array(beacons.length);
   i = 0;
@@ -100,9 +107,9 @@ function getWeightedPosition(beacons){
     y = beacons[i][1];
     // h = beacons[i][2];
     r = beacons[i][3];
-    d = rssi_to_dist(beacons[i][3], beacons[i][4], beacons[i][5])
+    d = rssi_to_dist(beacons[i][3], beacons[i][4], beacons[i][5]);
     // will become the weight
-    w = 1
+    w = 1;
     BeaconArray[i] = [x, y, r, d, w];
     i++;
   }
