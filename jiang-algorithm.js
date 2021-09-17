@@ -1,5 +1,5 @@
 /*-----------------------------  jiang-algorithm.js  -------------------------------
-This file consists of functions used to trilaterate an individual's position
+This file consists of functions used to determine an individual's position
 based on RSSI readings from various beacons. This implementation utilizes weights
 in order to prioritize the closest, most accurate readings.
 An optimal value for K, number of beacons to be utilized has yet to be discovered.
@@ -7,15 +7,10 @@ An optimal value for K, number of beacons to be utilized has yet to be discovere
 usable beacons this gives us in various locations...)
 An optimal algorithm for determining weights {w1, w2, ... , wk} for every k beacon
 yet to be discovered. It will scale based on RSSI linearly, linearithmically,
-etc. My idea is to instead add 100 to each RSSI value, add up the RSSI values and
-assign a weight proportional to each based on its composition of the sum (linear)
+etc. Current implementation is linearly scaling weights -- the weight for every value is determined
+based on its contribution to the total sum of rssi values.
 ----------------------------------------------------------------------*/
-/*jshint esversion: 6 */
-
-/*
-Import previous ips implementation to borrow functions related to trilateration,
-rssi value handling, etc.
-*/
+/*jshint esversion: 6*/
 
 // Calculates distance (in feet afaik) with -65 being RSSI@1meter
 // and n=2 being a constant (both provided by beacons)
@@ -91,14 +86,11 @@ function getAveragedLocation(BeaconArray){
 
 function getWeightedPosition(beacons){
   // import data
-  var x, y, r, d, i;
-  if(beacons.length < 3) {
-    return ["ERROR", "Not enough beacons!"];
-  }
+  var x, y, r, d, i, w;
   var BeaconArray = new Array(beacons.length);
   i = 0;
-  // stores x, y, rssi, distance (radius in feet?), and placeholder weight
-  while(i < num){
+  // stores x, y, rssi, distance (radius in feet), and placeholder weight
+  while(i < beacons.length){
     x = beacons[i][0];
     y = beacons[i][1];
     // h = beacons[i][2];
