@@ -25,16 +25,15 @@ function rssi_to_dist(rssi, A=-65, n=2 ) {
 // beacon[i][3] is the RSSI, sort array by this value
 function findKBest(beacons, k=7)
 {
-  var KBestArray = new Array(k).fill(1000);
+  var KBestArray = new Array(beacons.length).fill(-1000);
   beacons.forEach(function(beacon){
       KBestArray = insert(KBestArray, beacon);
   });
   return KBestArray;
-
 }
 
 function insert(array, value){
-  array.splice(sortedArrayIndex(array, value)+1,0, value);
+  array.splice(sortedArrayIndex(array, value),0, value);
   return array;
 }
 
@@ -57,8 +56,8 @@ function sortedArrayIndex(array, value){
 }
 
 function getWeights(BeaconArray){
-  var cumulativeRSSI, temp,
-  		InverseRSSI = new Array(beacons.length);
+  var cumulativeRSSI, temp;
+  var InverseRSSI = new Array(beacons.length);
   // fill InverseRSSI array with (100 - RSSI) from each beacon
   // accumulate the new sum of RSSIs to get (linearly) weighted average
   BeaconArray.forEach(function(beacon){
@@ -105,9 +104,9 @@ function getWeightedPosition(beacons){
   BeaconArray = findKBest(BeaconArray);
   // populate the w element in the BeaconArray array with weights (LINEARLY)
   BeaconArray = getWeights(BeaconArray);
+  return["Error", BeaconArray.toString()];
   // average x, y values
   var userLocation = getAveragedLocation(BeaconArray);
-
-  return userLocation;
+  return [userLocation[0].toFixed(4), userLocation[1].toFixed(4)];
 
 }
