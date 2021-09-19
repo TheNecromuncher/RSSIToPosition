@@ -10,86 +10,110 @@ yet to be discovered. It will scale based on RSSI linearly, linearithmically,
 etc. Current implementation is linearly scaling weights -- the weight for every value is determined
 based on its contribution to the total sum of rssi values.
 ----------------------------------------------------------------------*/
+
+/* TEST DRIVER AREA, IGNORE
+// create an array of 7 beacons, each beacon has 6 elements
+var BeaconArray = new Array(7).fill(0).map(x => Array(6).fill(0));
+BeaconArray.forEach(function(beacon, i) {
+  BeaconArray[i][0] = getRandomArbitrary(0, 65);
+  BeaconArray[i][1] = getRandomArbitrary(0, 65);
+  BeaconArray[i][2] = getRandomArbitrary(0, 11);
+  BeaconArray[i][3] = getRandomArbitrary(-85, -50);
+  BeaconArray[i][4] = -65;
+  BeaconArray[i][5] = 2;
+});
+
+console.log(getWeightedPosition(BeaconArray));
+END TEST DRIVER AREA */
+
 /*jshint esversion: 6*/
 
 // Calculates distance (in feet afaik) with -65 being RSSI@1meter
 // and n=2 being a constant (both provided by beacons)
-function rssi_to_dist(rssi, A=-65, n=2 ) {
-  var exp = (A - rssi)/(10*n),
-    dist = 3.28*Math.pow(10, exp);
+function rssi_to_dist(rssi, A = -65, n = 2) {
+  var exp = (A - rssi) / (10 * n),
+    dist = 3.28 * Math.pow(10, exp);
   return dist;
 }
 
 // new stuff
 
 // beacon[i][3] is the RSSI, sort array by this value
-function findKBest(beacons, k=7)
-{
-  var KBestArray = new Array(beacons.length).fill(-1000);
-  beacons.forEach(function(beacon){
-      KBestArray = insert(KBestArray, beacon);
+function findKBest(beacons, k = 7) {
+  var KBestArray = new Array(beacons.length).fill(0);
+  beacons.forEach(function(beacon) {
+    KBestArray = insert(KBestArray, beacon);
   });
+  KBestArray = removeElement(KBestArray, 0);
   return KBestArray;
 }
 
-function insert(array, value){
-  array.splice(sortedArrayIndex(array, value),0, value);
+function removeElement(array, arrayElement) {
+	for(var i = 0; i < array.length; i++){
+		if(array[i] == arrayElement){
+			array.splice(i--,1);
+		}
+	}
+	return array;
+}
+
+function insert(array, value) {
+  array.splice(sortedArrayIndex(array, value), 0, value);
   return array;
 }
 
 // for quicksort -- binary search js implementation sort of thing
-function sortedArrayIndex(array, value){
+function sortedArrayIndex(array, value) {
   var low = 0,
-  high = array.length;
-    while (low < high) {
-        // bitwise unsigned rightshift 1 -- to divide by 2 but much faster
-        var mid = (low + high) >>> 1;
-        // array[mid][3] just grabs the 4th element of the beacon -- the rssi
-        if (array[mid][3] < value[3]){
-          low = mid + 1;
-        }
-        else{
-          high = mid;
-        }
+    high = array.length;
+  while (low < high) {
+    // bitwise unsigned rightshift 1 -- to divide by 2 but much faster
+    var mid = (low + high) >>> 1;
+    // array[mid][3] just grabs the 4th element of the beacon -- the rssi
+    if (array[mid][3] < value[3]) {
+      low = mid + 1;
+    } else {
+      high = mid;
     }
-    return low;
+  }
+  return low;
 }
 
-function getWeights(BeaconArray){
-  var cumulativeRSSI, temp;
-  var InverseRSSI = new Array(beacons.length);
+function getWeights(BeaconArray) {
+  var cumulativeRSSI = 0, temp = 0,
+    InverseRSSI = new Array(BeaconArray.length);
   // fill InverseRSSI array with (100 - RSSI) from each beacon
   // accumulate the new sum of RSSIs to get (linearly) weighted average
-  BeaconArray.forEach(function(beacon){
+  BeaconArray.forEach(function(beacon, i) {
     temp = 100 - Math.abs(beacon[2]);
-    InverseRSSI.push(temp);
+    InverseRSSI[i] = temp;
     cumulativeRSSI += temp;
   });
   // each beacon gets an additional field, its weight, which is:
   // ( (100-RSSI) / new sum of RSSIs )
-  BeaconArray.forEach(function(beacon){
-    beacon[4] = (InverseRSSI[BeaconArray.indexOf(beacon)]/cumulativeRSSI);
+  BeaconArray.forEach(function(beacon, i) {
+    BeaconArray[i][4] = (InverseRSSI[i] / cumulativeRSSI);
   });
   return BeaconArray;
 }
 
-function getAveragedLocation(BeaconArray){
-  var x, y;
-  BeaconArray.forEach(function(beacon){
-    x += beacon[0] * beacon[5];
-    y += beacon[1] * beacon[5];
+function getAveragedLocation(BeaconArray) {
+  var x = 0, y = 0;
+  BeaconArray.forEach(function(beacon) {
+    x += (beacon[0] * beacon[4]);
+    y += (beacon[1] * beacon[4]);
   });
   var userLocation = [x, y];
   return userLocation;
 }
 
-function getWeightedPosition(beacons){
+function getWeightedPosition(beacons) {
   // import data
   var x, y, r, d, i, w;
   var BeaconArray = new Array(beacons.length);
   i = 0;
   // stores x, y, rssi, distance (radius in feet), and placeholder weight
-  while(i < beacons.length){
+  while (i < beacons.length) {
     x = beacons[i][0];
     y = beacons[i][1];
     // h = beacons[i][2];
@@ -104,9 +128,13 @@ function getWeightedPosition(beacons){
   BeaconArray = findKBest(BeaconArray);
   // populate the w element in the BeaconArray array with weights (LINEARLY)
   BeaconArray = getWeights(BeaconArray);
-  return["Error", BeaconArray.toString()];
   // average x, y values
   var userLocation = getAveragedLocation(BeaconArray);
   return [userLocation[0].toFixed(4), userLocation[1].toFixed(4)];
 
+}
+
+
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
 }
