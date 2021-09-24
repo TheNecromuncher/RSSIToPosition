@@ -39,7 +39,7 @@ function rssi_to_dist(rssi, A = -65, n = 2) {
 // new stuff
 
 // beacon[i][3] is the RSSI, sort array by this value
-function findKBest(beacons, k = 7) {
+function findKBest(beacons, k = 3) {
   var KBestArray = new Array(beacons.length).fill(0);
   beacons.forEach(function(beacon) {
     KBestArray = insert(KBestArray, beacon);
