@@ -22,7 +22,6 @@ BeaconArray.forEach(function(beacon, i) {
   BeaconArray[i][4] = -65;
   BeaconArray[i][5] = 2;
 });
-
 console.log(getWeightedPosition(BeaconArray));
 END TEST DRIVER AREA */
 
@@ -39,26 +38,30 @@ function rssi_to_dist(rssi, A = -65, n = 2) {
 // new stuff
 
 // beacon[i][3] is the RSSI, sort array by this value
-function findKBest(beacons, k = 3) {
-  var KBestArray = new Array(beacons.length).fill(0);
+
+function findKBest(beacons, k = 7) {
+  //this is the line that we are troubleshooting
+  if(beacons.length < k){
+    KBestArray = new Array(beacons.length);
+  }else {
+    KBestArray = new Array(k);
+  }
+  KBestArray.fill([-1, -1, -1000, -1, -1]);
   beacons.forEach(function(beacon) {
     KBestArray = insert(KBestArray, beacon);
   });
-  KBestArray = removeElement(KBestArray, 0);
-  return KBestArray;
-}
-
-function removeElement(array, arrayElement) {
-	for(var i = 0; i < array.length; i++){
-		if(array[i] == arrayElement){
-			array.splice(i--,1);
-		}
-	}
-	return array;
+  return KBestArray.slice(0,k);
 }
 
 function insert(array, value) {
-  array.splice(sortedArrayIndex(array, value), 0, value);
+  var index = sortedArrayIndex(array, value);
+  if(index == array.length-1){
+    if(value[2] > array[index][2]){
+      array[index] = value;
+    }
+  } else {
+    array.splice(index+1, 0, value);
+  }
   return array;
 }
 
@@ -67,10 +70,10 @@ function sortedArrayIndex(array, value) {
   var low = 0,
     high = array.length;
   while (low < high) {
-    // bitwise unsigned rightshift 1 -- to divide by 2 but much faster
+    // bitwise unsigned rightshift 1 -- to divide by 2 + truncate but much faster
     var mid = (low + high) >>> 1;
-    // array[mid][3] just grabs the 4th element of the beacon -- the rssi
-    if (array[mid][3] < value[3]) {
+    // array[mid][2] just grabs the 3rd element of the beacon -- the rssi
+    if (array[mid][2] > value[2]) {
       low = mid + 1;
     } else {
       high = mid;
