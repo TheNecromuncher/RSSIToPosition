@@ -39,29 +39,15 @@ function rssi_to_dist(rssi, A = -65, n = 2) {
 
 // beacon[i][3] is the RSSI, sort array by this value
 
-function findKBest(beacons, k = 7) {
-  //this is the line that we are troubleshooting
-  if(beacons.length < k){
-    KBestArray = new Array(beacons.length);
-  }else {
-    KBestArray = new Array(k);
-  }
-  KBestArray.fill([-1, -1, -1000, -1, -1]);
-  beacons.forEach(function(beacon) {
-    KBestArray = insert(KBestArray, beacon);
-  });
-  return KBestArray.slice(0,k);
+function findKBest(beacons, k) {
+  sortedArray = beacons.sort(function(a, b) {
+  return a[2] - b[2];
+});
+  return sortedArray.slice(0,k);
 }
 
 function insert(array, value) {
-  var index = sortedArrayIndex(array, value);
-  if(index == array.length-1){
-    if(value[2] > array[index][2]){
-      array[index] = value;
-    }
-  } else {
-    array.splice(index+1, 0, value);
-  }
+  array.splice(sortedArrayIndex(array, value), 0, value);
   return array;
 }
 
@@ -110,7 +96,13 @@ function getAveragedLocation(BeaconArray) {
   return userLocation;
 }
 
-function getWeightedPosition(beacons) {
+function getWeigtedSquareRoot(BeaconArray) {
+  var x = 0, y = 0;
+  var userLocation = [x, y];
+  return userLocation;
+}
+
+function getWeightedPosition(beacons, k = 7) {
   // import data
   var x, y, r, d, i, w;
   var BeaconArray = new Array(beacons.length);
@@ -128,7 +120,7 @@ function getWeightedPosition(beacons) {
     i++;
   }
   // sort and find top k beacons (k = 7 default)
-  BeaconArray = findKBest(BeaconArray);
+  BeaconArray = findKBest(BeaconArray, k);
   // populate the w element in the BeaconArray array with weights (LINEARLY)
   BeaconArray = getWeights(BeaconArray);
   // average x, y values
